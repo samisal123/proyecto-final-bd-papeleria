@@ -1,0 +1,1242 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{pdflscape}
+\usepackage{afterpage}
+\usepackage{caption}
+\usepackage{needspace}
+\usepackage{pifont}
+\usepackage{amssymb}
+\usepackage[obeyspaces,spaces]{url}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{grisclaro}{gray}{0.955}
+\definecolor{grisborde}{gray}{0.70}
+\definecolor{tinta2}{HTML}{52514E}
+\definecolor{pend}{HTML}{B3261E}
+
+\newcommand{\cod}[1]{{\ttfamily\nolinkurl{#1}}}
+\newcommand{\codb}[1]{{\ttfamily\nolinkurl{#1}}}
+\newcommand{\ok}{\ding{51}}
+\newcommand{\pendiente}[1]{{\color{pend}\textbf{[Pendiente:} #1\textbf{]}}}
+
+% Código SQL
+\lstdefinelanguage{pgsql}{
+  morekeywords={select,from,where,and,or,not,in,is,null,as,on,join,left,group,by,order,
+    having,limit,distinct,insert,into,values,update,set,delete,create,replace,function,
+    procedure,returns,return,language,declare,begin,end,if,then,else,elsif,for,loop,
+    raise,exception,warning,notice,using,hint,trigger,after,before,each,row,execute,
+    view,table,constraint,primary,key,foreign,references,check,unique,default,sequence,
+    index,btree,deferrable,initially,deferred,found,query,inout,stable,immutable,call,
+    case,when,exists,coalesce,sum,count,cardinality,cascade,restrict,grant,usage,
+    schema,role,between,alter,column,drop,commit,rollback,with,int,varchar,numeric,
+    date,char,bigint,text},
+  sensitive=false,
+  morecomment=[l]{--},
+  morestring=[b]',
+}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\bfseries,
+  commentstyle=\color{tinta2}\itshape,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  upquote=true,
+  extendedchars=true,
+  inputencoding=utf8,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+           {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+           {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {ü}{{\"u}}1 {¿}{{?`}}1 {¡}{{!`}}1,
+}
+\newtcblisting{codigo}[1][pgsql]{
+  enhanced, breakable, listing only,
+  colback=grisclaro, colframe=grisborde, boxrule=0.4pt, arc=0pt,
+  left=6pt, right=4pt, top=3pt, bottom=3pt,
+  listing options={language=#1},
+}
+
+\setlength{\LTpre}{6pt}
+\setlength{\LTpost}{4pt}
+
+\begin{document}
+
+% =============================================================================
+% PORTADA
+% =============================================================================
+\begin{titlepage}
+\centering
+\includegraphics[height=3.8cm]{img/logo_fi.png}\hfill
+\includegraphics[height=3.8cm]{img/logo_unam.png}
+
+\vspace{1.4cm}
+{\Large\bfseries Universidad Nacional Autónoma de México}\\[2pt]
+{\large Facultad de Ingeniería}
+
+\vspace{1.0cm}
+\rule{\textwidth}{0.6pt}
+
+\vspace{0.4cm}
+{\LARGE\bfseries Proyecto final}\\[14pt]
+{\LARGE\bfseries Sistema de ventas e inventario\\[2pt] para una cadena de papelerías}
+
+\vspace{0.5cm}
+\rule{\textwidth}{0.6pt}
+
+\vspace{1.0cm}
+{\small
+\textbf{Semestre:} 2027-1\\[3pt]
+\textbf{Materia:} Bases de Datos\\[3pt]
+\textbf{Profesor:} Ing. Fernando Arreola\\[3pt]
+% \textbf{Grupo:} \\[3pt]
+\textbf{Fecha de entrega:} 28 de noviembre de 2026\par}
+
+\vspace{1.4cm}
+{\large\bfseries Integrantes:}
+
+\vspace{0.3cm}
+{\large
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{r@{\hspace{1.2em}}l}
+          & Arzate Rios Adrián Axel \\
+321137135 & Basilio Illescas Andrés \\
+424065465 & Cruz Macedo Samuel Santiago \\
+          & Díaz Díaz Mario \\
+          & Ferrer Cordero José Manuel \\
+          & García Olvera José Ignacio \\
+\end{tabular}\par}
+
+\vfill
+\end{titlepage}
+
+\setcounter{tocdepth}{2}
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Introducción}
+% =============================================================================
+
+Una cadena de papelerías quiere dejar de llevar su información en registros
+sueltos y pasarla a un sistema que concentre proveedores, clientes, inventario y
+ventas. Además de guardar los datos, el sistema debe armar la factura de una
+venta, decir cuánto se vendió y cuánto se ganó en un día o en un periodo,
+descontar del inventario lo que se vende y avisar cuando un producto está por
+acabarse.
+
+\subsection{Análisis del problema}
+
+Del enunciado se identifican cuatro grupos de datos:
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.2em]
+\item Proveedores: razón social, nombre, domicilio y uno o varios teléfonos.
+\item Clientes: RFC, nombre, domicilio y al menos un correo electrónico.
+\item Inventario: por cada producto, su código de barras, precio de compra, foto,
+fecha de compra y piezas en bodega (stock). Los productos son de cuatro tipos
+(regalos, artículos de papelería, impresiones y recargas) y de todos se guarda
+marca, descripción y precio de venta.
+\item Ventas: número de venta con formato \cod{VENT-001}, fecha, total a pagar y,
+por cada artículo, la cantidad y el total a pagar por ese artículo.
+\end{itemize}
+
+El domicilio, en proveedores y en clientes, se compone de estado, código postal,
+colonia, calle y número.
+
+\subsection{Objetivos}
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.2em]
+\item Diseñar una base de datos en PostgreSQL que cumpla los requerimientos, esté
+normalizada y mantenga la consistencia de la información.
+\item Resolver con programación en la base de datos (PL/pgSQL) la factura, el
+reporte de ventas y ganancia por fecha o periodo, el control de stock con alertas,
+la consulta de productos con poco stock y la utilidad de un producto.
+\item Construir un dashboard que muestre los ingresos por día contra la ganancia
+real, el top 10 de productos más vendidos y los productos no disponibles o con
+bajo stock.
+\end{itemize}
+
+\subsection{Propuesta de solución}
+
+La solución tiene dos capas. La base de datos \cod{papeleria} guarda la
+información y contiene toda la lógica del negocio: un procedimiento registra
+cada venta dentro de una transacción, los triggers descuentan el stock, calculan
+los totales y abortan la venta si el stock llegaría a cero, y las vistas y
+funciones entregan la factura y los reportes. La segunda capa es un dashboard
+web en Python (Streamlit y Plotly) que solo consulta esas vistas y funciones con
+un usuario de solo lectura, así que cualquier otra aplicación que se conecte a la
+base obtiene los mismos resultados.
+
+% =============================================================================
+\section{Plan de trabajo}
+% =============================================================================
+
+El proyecto se planteó el 28 de octubre de 2026 y se entrega el 28 de noviembre;
+la exposición es entre el 30 de noviembre y el 3 de diciembre. El trabajo se
+organizó en las actividades de la tabla~\ref{tab:plan}.
+
+\renewcommand{\arraystretch}{1.25}
+\small
+\begin{longtable}{@{}>{\centering\arraybackslash}p{0.7cm}
+>{\raggedright\arraybackslash}p{7.6cm}
+>{\raggedright\arraybackslash}p{3.0cm}
+>{\raggedright\arraybackslash}p{\dimexpr\textwidth-11.3cm-6\tabcolsep\relax}@{}}
+\caption{Actividades del proyecto.}\label{tab:plan}\\
+\toprule
+\textbf{\#} & \textbf{Actividad} & \textbf{Fechas} & \textbf{Entregable} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Actividad} & \textbf{Fechas} & \textbf{Entregable} \\
+\midrule
+\endhead
+1 & Formación del equipo y carpeta en GitHub & 7 nov & Carpeta del equipo \\
+2 & Análisis de requerimientos y modelo entidad relación & 14 al 16 nov & MER \\
+3 & Modelo relacional y normalización & 16 al 17 nov & MR \\
+4 & Script de creación de la base de datos y tablas & 17 al 18 nov & Script 01 \\
+5 & Programación: triggers, procedimientos, funciones, vistas e índices & 18 al 21 nov & Script 02 \\
+6 & Datos de prueba y script de carga & 19 al 21 nov & Script 03 \\
+7 & Dashboard & 21 al 23 nov & Aplicación \\
+8 & Pruebas y matriz de pruebas & 23 al 25 nov & Matriz de pruebas \\
+9 & Documento y checklist de despliegue & 20 al 27 nov & Documento \\
+10 & Presentación y ensayo de la exposición & 26 al 29 nov & Presentación \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+% Ajustar la tabla a lo que hizo realmente cada integrante.
+\Needspace{12\baselineskip}
+\subsection{Participación de cada integrante}
+
+\renewcommand{\arraystretch}{1.25}
+\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{5.2cm}
+>{\raggedright\arraybackslash}p{\dimexpr\textwidth-5.2cm-2\tabcolsep\relax}@{}}
+\toprule
+\textbf{Integrante} & \textbf{Actividades a su cargo} \\
+\midrule
+\endhead
+Arzate Rios Adrián Axel & Modelo entidad relación y modelo relacional. \\
+Basilio Illescas Andrés & Programación en PL/pgSQL: triggers, procedimientos y funciones. \\
+Cruz Macedo Samuel Santiago & Dashboard y su conexión con la base de datos. \\
+Díaz Díaz Mario & Datos de prueba, script de carga y matriz de pruebas. \\
+Ferrer Cordero José Manuel & Documento en LaTeX y checklist de despliegue. \\
+García Olvera José Ignacio & Repositorio del equipo, normalización y presentación. \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+% =============================================================================
+\section{Diseño}
+% =============================================================================
+
+El diseño siguió las fases vistas en el curso: diseño conceptual (modelo entidad
+relación), diseño lógico (modelo relacional), normalización y diseño físico en
+PostgreSQL.
+
+\subsection{Reglas de negocio y supuestos}
+
+Algunos puntos del enunciado admiten más de una lectura. Estas son las decisiones
+que se tomaron:
+
+\begin{enumerate}[leftmargin=1.2cm, itemsep=0.25em]
+\item \textit{Stock en cero.} El enunciado pide abortar la transacción si el stock
+llega a cero. Se tomó la lectura literal: una venta que dejaría el stock en cero o
+en negativo se rechaza completa. Con esto siempre queda al menos una pieza en
+bodega. Un producto solo aparece como no disponible (stock 0) cuando se registra
+sin existencias, por ejemplo cuando ya se pidió al proveedor y todavía no llega.
+\item \textit{Alerta de stock bajo.} Se emite al confirmar la venta (cuando el
+pedido se completó) para cada producto vendido al que le queden menos de 3 piezas.
+\item \textit{Precios históricos.} Cada artículo vendido guarda el precio de venta y
+el precio de compra vigentes en ese momento. Si después cambia el precio de un
+producto, las ventas pasadas conservan su importe y su ganancia reales.
+\item \textit{Ganancia y utilidad.} La utilidad de un producto es su precio de venta
+menos su precio de compra. La ganancia de un periodo es la suma, en los artículos
+vendidos, de la cantidad por la diferencia entre el precio con el que se vendió y
+el costo con el que se compró.
+\item \textit{IVA.} Los precios al público incluyen IVA (16~\%). La factura desglosa
+subtotal e IVA a partir del total.
+\item \textit{Público en general.} Las ventas sin cliente registrado se hacen al RFC
+genérico \cod{XAXX010101000}, como se acostumbra en México.
+\item \textit{Nombre del producto.} El enunciado pide obtener el nombre de los
+productos con poco stock, así que cada producto tiene un nombre además de su
+marca y descripción.
+\item \textit{Foto.} Se guarda la ruta o URL de la imagen. Las imágenes viven en
+almacenamiento de archivos y la tabla de productos se mantiene ligera.
+\item \textit{Proveedor de cada producto.} Cada producto lo surte un proveedor, y un
+proveedor puede surtir varios productos.
+\item \textit{Correos.} Un mismo correo puede registrarse para más de un cliente (por
+ejemplo, el correo de una oficina), por eso la llave del correo es el par RFC y
+correo.
+\end{enumerate}
+
+\subsection{Diseño conceptual: modelo entidad relación}
+
+La figura~\ref{fig:mer} muestra el modelo en notación de Chen. Las llaves
+primarias están subrayadas, la clave candidata \cod{razon_social} lleva una barra
+en su línea, los atributos multivaluados tienen doble elipse, los derivados elipse
+punteada y los opcionales línea punteada.
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.2em]
+\item Las entidades fuertes son PROVEEDOR, PRODUCTO, VENTA y CLIENTE.
+\item \cod{domicilio} es un atributo compuesto (estado, cp, colonia, calle y
+número) en proveedor y en cliente. También lo es \cod{nombre_completo} del cliente
+(nombre, apellido paterno y apellido materno); los apellidos son opcionales porque
+una persona moral no los tiene.
+\item \cod{telefono} del proveedor y \cod{email} del cliente son multivaluados.
+\item \cod{utilidad} del producto, \cod{total_venta} de la venta y
+\cod{total_articulo} de la relación \textit{incluye} son derivados.
+\item PRODUCTO es supertipo de REGALO, PAPELERIA, IMPRESION y RECARGA. La jerarquía
+es disjunta (un producto es de un solo tipo) y total (todo producto es de alguno de
+los cuatro tipos); el discriminante es \cod{tipo}.
+\item Un proveedor surte de 0 a n productos y cada producto lo surte un proveedor
+(1:n). Un cliente realiza de 0 a n ventas y cada venta es de un cliente (1:n). Una
+venta incluye de 1 a n productos y un producto puede estar en 0 a n ventas (m:n);
+esta relación tiene sus propios atributos: cantidad, precio unitario, costo unitario
+y total por artículo.
+\end{itemize}
+
+\afterpage{%
+\begin{landscape}
+\centering
+\vspace*{\fill}
+\includegraphics[width=\linewidth,height=0.86\textheight,keepaspectratio]{../modelos/mer_papeleria.pdf}
+\captionof{figure}{Modelo entidad relación extendido (notación de Chen).}
+\label{fig:mer}
+\vspace*{\fill}
+\end{landscape}}
+
+\subsection{Diseño lógico: modelo relacional}
+
+La transformación aplicó las reglas vistas en clase:
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.2em]
+\item Cada entidad fuerte se convirtió en una relación y su clave principal en la
+llave primaria. La clave candidata \cod{razon_social} quedó como única (U).
+\item Los atributos compuestos se descompusieron en sus atributos simples.
+\item Cada atributo multivaluado generó una relación nueva cuya llave primaria es la
+llave propagada más el atributo: \cod{telefono_proveedor} y \cod{email_cliente}.
+\item En las relaciones 1:n la llave del lado 1 se propagó como llave foránea al
+lado n (\cod{id_proveedor} en producto y \cod{rfc_cliente} en venta).
+\item La relación m:n \textit{incluye} generó \cod{detalle_venta}, con llave
+primaria formada por las dos llaves foráneas y con los atributos propios de la
+relación.
+\item La jerarquía se transformó en una sola relación con discriminante. Los cuatro
+subtipos no tienen atributos propios (todos tienen marca, descripción y precio),
+así que una tabla por subtipo repetiría las mismas columnas sin ganar nada. La
+restricción check sobre \cod{tipo} garantiza que la jerarquía sea disjunta y total.
+\item Los atributos derivados que pide el enunciado guardar (\cod{total_venta} y
+\cod{total_articulo}) se marcaron como calculados (C); \cod{utilidad} no se guarda
+y se calcula con una función.
+\end{itemize}
+
+En la notación del curso (PK llave primaria, FK foránea, U única, N nulo, C
+calculado, CK check, D discriminante):
+
+\begin{codigo}[]
+CODIGO_POSTAL: { cp char(5) (PK)(CK), estado varchar(40) }
+
+PROVEEDOR: { id_proveedor int (PK), razon_social varchar(120) (U),
+  nombre varchar(80), cp char(5) (FK), colonia varchar(60),
+  calle varchar(80), numero varchar(10) }
+
+TELEFONO_PROVEEDOR: { id_proveedor int (PK)(FK), telefono varchar(10) (PK)(CK) }
+
+CLIENTE: { rfc varchar(13) (PK)(CK), nombre varchar(80), ap_paterno varchar(50) (N),
+  ap_materno varchar(50) (N), cp char(5) (FK), colonia varchar(60),
+  calle varchar(80), numero varchar(10) }
+
+EMAIL_CLIENTE: { rfc varchar(13) (PK)(FK), email varchar(100) (PK)(CK) }
+
+PRODUCTO: { codigo_barras varchar(13) (PK)(CK), nombre varchar(60),
+  marca varchar(40), descripcion varchar(150), tipo varchar(10) (D)(CK),
+  precio_venta numeric(10,2) (CK), precio_compra numeric(10,2) (CK),
+  foto varchar(200), fecha_compra date, stock int (CK), id_proveedor int (FK) }
+
+VENTA: { num_venta varchar(12) (PK)(CK), fecha_venta date,
+  total_venta numeric(12,2) (C)(CK), rfc_cliente varchar(13) (FK) }
+
+DETALLE_VENTA: { num_venta varchar(12) (PK)(FK), codigo_barras varchar(13) (PK)(FK),
+  cantidad int (CK), precio_unitario numeric(10,2), costo_unitario numeric(10,2),
+  total_articulo numeric(12,2) (C) }
+\end{codigo}
+
+La figura~\ref{fig:mr} muestra el mismo modelo en notación pata de gallo. Las
+líneas indican participación: una barra doble es exactamente uno; un círculo con
+pata de gallo, cero o muchos; una barra con pata de gallo, uno o muchos (todo
+cliente tiene al menos un correo y toda venta al menos un artículo).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../modelos/mr_papeleria.pdf}
+\caption{Modelo relacional (notación pata de gallo).}
+\label{fig:mr}
+\end{figure}
+
+\subsection{Normalización}
+
+Para cada relación se listaron sus dependencias funcionales y se revisó la forma
+normal.
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.3em]
+\item \textit{Domicilio.} En la primera versión el domicilio tenía estado, cp,
+colonia, calle y número. Sin embargo, en México cada código postal pertenece a un
+solo estado, así que existe la dependencia \cod{cp} $\rightarrow$ \cod{estado}. Como \cod{cp}
+no es llave del proveedor ni del cliente, el estado dependía de la llave a través
+del código postal (dependencia transitiva) y las relaciones no estaban en 3FN.
+Se separó la relación \cod{codigo_postal(cp, estado)}; proveedor y cliente
+conservan el \cod{cp} como llave foránea. Además de cumplir la 3FN, así no se
+puede registrar un domicilio con un estado que no corresponde a su código postal.
+\item \cod{codigo_postal}: \cod{cp} $\rightarrow$ \cod{estado}. FNBC.
+\item \cod{proveedor}: \cod{id_proveedor} $\rightarrow$  todos los atributos y
+\cod{razon_social} $\rightarrow$ \cod{id_proveedor}. Los dos determinantes son llaves
+candidatas. FNBC.
+\item \cod{cliente}: \cod{rfc} $\rightarrow$  todos los atributos. FNBC.
+\item \cod{telefono_proveedor} y \cod{email_cliente}: todos sus atributos forman la
+llave, no hay dependencias no triviales. FNBC.
+\item \cod{producto}: \cod{codigo_barras} $\rightarrow$  todos los atributos. FNBC.
+\item \cod{venta}: \cod{num_venta} $\rightarrow$ \cod{fecha_venta, total_venta, rfc_cliente}.
+FNBC.
+\item \cod{detalle_venta}: \cod{(num_venta, codigo_barras)} $\rightarrow$ \cod{cantidad,
+precio_unitario, costo_unitario, total_articulo}. El precio unitario no depende
+solo del código de barras porque los precios cambian con el tiempo; depende de la
+venta y del producto, así que no hay dependencia parcial.
+\end{itemize}
+
+Los dos totales son una desnormalización que pide el enunciado:
+\{\cod{cantidad, precio_unitario}\} $\rightarrow$ \cod{total_articulo} y \cod{total_venta}
+es la suma de los artículos de la venta. Para que nunca queden inconsistentes, solo
+los modifican los triggers; un \cod{update} directo sobre \cod{total_venta} se
+rechaza (sección~\ref{sec:consistencia}).
+
+\subsection{Diseño físico}
+
+\subsubsection{Tipos de datos y restricciones}
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.2em]
+\item Importes en \cod{numeric(10,2)}, que guarda los centavos exactos; los tipos de
+punto flotante acumulan errores de redondeo en sumas de dinero.
+\item \cod{codigo_barras} como texto de 8 a 13 dígitos (EAN-8, UPC y EAN-13). Se
+guarda como texto porque puede empezar con cero y no se hacen operaciones con él.
+\item El RFC se valida con una expresión regular: 3 o 4 letras, 6 dígitos de fecha y
+3 caracteres de homoclave (12 caracteres en personas morales y 13 en físicas).
+\item Teléfonos de 10 dígitos, códigos postales de 5 dígitos y correos con formato
+válido, también con restricciones check.
+\item \cod{precio_compra} mayor a cero, \cod{precio_venta} mayor o igual al de
+compra (no se vende con pérdida) y \cod{stock} mayor o igual a cero.
+\item Las llaves foráneas usan \cod{on update cascade}. Al borrar se usa
+\cod{restrict} donde hay historia que conservar (no se puede borrar un producto ya
+vendido ni un cliente con ventas) y \cod{cascade} en los atributos multivaluados y
+en el detalle de una venta.
+\item \cod{id_proveedor} es una clave artificial generada con
+\cod{generated always as identity}.
+\end{itemize}
+
+\subsubsection{Número de venta}
+
+La secuencia \cod{seq_num_venta} entrega el consecutivo y la función
+\cod{fn_nuevo_num_venta()}, usada como valor por omisión de \cod{num_venta}, le da
+el formato: prefijo \cod{VENT}, guion y el número con al menos tres cifras
+(\cod{VENT-001}, \cod{VENT-057}, \cod{VENT-1000}).
+
+\subsubsection{Índice}
+
+Se creó el índice B-tree \cod{idx_venta_fecha} sobre \cod{venta(fecha_venta)}. Las
+consultas por fecha o periodo (\cod{fn_ventas_periodo}, \cod{v_ventas_por_dia} y el
+dashboard) filtran por rangos de fechas. Un B-tree guarda las llaves ordenadas, así
+que resuelve igualdades y rangos (\cod{between}) sin recorrer toda la tabla; un
+índice hash solo sirve para igualdades. Se eligió la tabla \cod{venta} porque es la
+que más crece. Con los datos de prueba, PostgreSQL resuelve una semana de ventas con
+un \textit{Index Only Scan} sobre este índice (prueba P20).
+
+% =============================================================================
+\section{Implementación}
+% =============================================================================
+
+Los scripts se ejecutan en este orden:
+
+\begin{enumerate}[leftmargin=1.2cm, itemsep=0.2em]
+\item \cod{01_creacion_bd_tablas.sql}: base de datos, tablas, secuencia e índices.
+\item \cod{02_programacion_bd.sql}: funciones, triggers, procedimientos, vistas y
+el rol de solo lectura.
+\item \cod{03_carga_datos.sql}: datos de prueba.
+\end{enumerate}
+
+\subsection{Flujo de una venta}
+
+Una venta se registra con el procedimiento \cod{sp_registrar_venta}, que recibe el
+RFC del cliente, un arreglo de códigos de barras y un arreglo de cantidades. Todo
+ocurre en una sola transacción:
+
+\begin{enumerate}[leftmargin=1.2cm, itemsep=0.2em]
+\item El procedimiento revisa que haya al menos un artículo y una cantidad por código.
+\item Inserta el encabezado en \cod{venta}; el número lo genera
+\cod{fn_nuevo_num_venta()}.
+\item Inserta cada artículo en \cod{detalle_venta}. Por cada uno, el trigger
+\cod{tg_detalle_venta_antes} bloquea el producto, descuenta el stock (o aborta si
+llegaría a cero), copia los precios vigentes y calcula el total del artículo.
+\item El trigger \cod{tg_detalle_venta_total} recalcula el total de la venta.
+\item Al confirmar la transacción, el trigger diferido \cod{tg_alerta_stock_bajo}
+emite una alerta por cada producto vendido que quedó con menos de 3 piezas.
+\end{enumerate}
+
+Si cualquier paso falla, \cod{raise exception} aborta la transacción y PostgreSQL
+deshace todo: no queda la venta, ni artículos sueltos, ni stock descontado. Lo único
+que no se deshace es el número tomado de la secuencia, así que una venta abortada
+deja un hueco en la numeración; las secuencias de PostgreSQL funcionan así para no
+bloquear a las demás transacciones.
+
+\subsection{Número de venta}
+
+\begin{codigo}
+create or replace function fn_nuevo_num_venta()
+returns varchar
+language plpgsql
+as $$
+declare
+  v_num text := nextval('seq_num_venta')::text;
+begin
+  return 'VENT-' || lpad(v_num, greatest(3, length(v_num)), '0');
+end;
+$$;
+\end{codigo}
+
+\subsection{Trigger de stock, precios y total por artículo}
+
+Se ejecuta antes de insertar, actualizar o borrar un renglón de
+\cod{detalle_venta}. Al insertar, bloquea el renglón del producto con
+\cod{for update} para que dos ventas simultáneas no lean el mismo stock, valida que
+el stock no llegue a cero, lo descuenta y toma los precios vigentes. Al actualizar
+la cantidad ajusta el stock por la diferencia y conserva los precios con los que se
+vendió. Al borrar un artículo regresa sus piezas al stock, lo que también ocurre
+cuando se borra una venta completa (el borrado en cascada pasa por este trigger).
+
+\begin{codigo}
+create or replace function fn_tg_detalle_venta_antes()
+returns trigger
+language plpgsql
+as $$
+declare
+  v_stock          producto.stock%type;
+  v_precio_venta   producto.precio_venta%type;
+  v_precio_compra  producto.precio_compra%type;
+  v_nombre         producto.nombre%type;
+  v_diferencia     int;
+begin
+  if tg_op = 'DELETE' then
+    update producto
+       set stock = stock + old.cantidad
+     where codigo_barras = old.codigo_barras;
+    return old;
+  end if;
+
+  if tg_op = 'UPDATE' then
+    -- pg_trigger_depth() = 1 indica un UPDATE escrito directamente sobre la
+    -- tabla; los cambios en cascada de las llaves foráneas sí se permiten.
+    if pg_trigger_depth() = 1
+       and (new.num_venta <> old.num_venta or new.codigo_barras <> old.codigo_barras) then
+      raise exception 'No se puede cambiar la venta ni el producto de un artículo vendido'
+        using hint = 'Elimine el artículo de la venta y agréguelo de nuevo.';
+    end if;
+    -- se conservan los precios con los que se hizo la venta
+    new.precio_unitario := old.precio_unitario;
+    new.costo_unitario  := old.costo_unitario;
+    v_diferencia := new.cantidad - old.cantidad;
+  else
+    v_diferencia := new.cantidad;
+  end if;
+
+  if v_diferencia <> 0 then
+    -- FOR UPDATE bloquea el renglón del producto hasta el fin de la transacción
+    -- para que dos ventas simultáneas no lean el mismo stock
+    select stock, precio_venta, precio_compra, nombre
+      into v_stock, v_precio_venta, v_precio_compra, v_nombre
+      from producto
+     where codigo_barras = new.codigo_barras
+       for update;
+
+    if not found then
+      raise exception 'El producto con código de barras % no existe', new.codigo_barras;
+    end if;
+
+    if v_diferencia > 0 and v_stock - v_diferencia <= 0 then
+      raise exception 'Venta abortada: el stock de "%" (código %) llegaría a % (hay %, se piden %)',
+        v_nombre, new.codigo_barras, v_stock - v_diferencia, v_stock, v_diferencia
+        using hint = 'Una venta no puede dejar el stock en cero; reabastezca el producto o venda menos piezas.';
+    end if;
+
+    update producto
+       set stock = stock - v_diferencia
+     where codigo_barras = new.codigo_barras;
+  end if;
+
+  if tg_op = 'INSERT' then
+    new.precio_unitario := v_precio_venta;
+    new.costo_unitario  := v_precio_compra;
+  end if;
+
+  new.total_articulo := new.cantidad * new.precio_unitario;
+  return new;
+end;
+$$;
+
+create trigger tg_detalle_venta_antes
+  before insert or update or delete on detalle_venta
+  for each row
+  execute function fn_tg_detalle_venta_antes();
+\end{codigo}
+
+\subsection{Trigger del total de la venta}
+
+Después de cualquier cambio en el detalle, recalcula el total de la venta como la
+suma de sus artículos. Se recalcula la suma completa para que un error acumulado
+no deje el total desfasado.
+
+\begin{codigo}
+create or replace function fn_tg_detalle_venta_total()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op in ('INSERT', 'UPDATE') then
+    update venta
+       set total_venta = (select coalesce(sum(d.total_articulo), 0)
+                            from detalle_venta d
+                           where d.num_venta = new.num_venta)
+     where num_venta = new.num_venta;
+  end if;
+
+  if tg_op = 'DELETE' then
+    update venta
+       set total_venta = (select coalesce(sum(d.total_articulo), 0)
+                            from detalle_venta d
+                           where d.num_venta = old.num_venta)
+     where num_venta = old.num_venta;
+  end if;
+
+  return null;
+end;
+$$;
+
+create trigger tg_detalle_venta_total
+  after insert or update or delete on detalle_venta
+  for each row
+  execute function fn_tg_detalle_venta_total();
+\end{codigo}
+
+\subsection{Alerta de stock bajo}
+
+Es un trigger de restricción diferido (\cod{deferrable initially deferred}): se
+ejecuta al confirmar la transacción, después de insertar todos los artículos. Así la alerta
+solo aparece si el pedido se completó y muestra el stock con el que quedó el
+producto. Se emite con \cod{raise warning}, que llega al cliente como aviso sin
+detener la operación.
+
+\begin{codigo}
+create or replace function fn_tg_alerta_stock()
+returns trigger
+language plpgsql
+as $$
+declare
+  v_stock   producto.stock%type;
+  v_nombre  producto.nombre%type;
+begin
+  select stock, nombre
+    into v_stock, v_nombre
+    from producto
+   where codigo_barras = new.codigo_barras;
+
+  if found and v_stock < 3 then
+    raise warning 'ALERTA DE STOCK: quedan % pieza(s) de "%" (código %) después de la venta %',
+      v_stock, v_nombre, new.codigo_barras, new.num_venta;
+  end if;
+
+  return null;
+end;
+$$;
+
+create constraint trigger tg_alerta_stock_bajo
+  after insert or update of cantidad on detalle_venta
+  deferrable initially deferred
+  for each row
+  execute function fn_tg_alerta_stock();
+\end{codigo}
+
+\subsection{Reglas de consistencia}\label{sec:consistencia}
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.2em]
+\item \cod{tg_venta_consistencia}: el total de una venta nueva empieza en cero y no
+se puede modificar con un \cod{update} directo (solo desde los triggers del
+detalle, que corren con \cod{pg_trigger_depth()} mayor a 1). También rechaza
+ventas con fecha futura.
+\item \cod{tg_venta_con_detalle} y \cod{tg_detalle_venta_minimo}: al confirmar,
+toda venta debe tener al menos un artículo.
+\item \cod{tg_cliente_con_email} y \cod{tg_email_cliente_minimo}: al confirmar,
+todo cliente debe tener al menos un correo. Por ser diferidos permiten insertar el
+cliente y sus correos en la misma transacción.
+\end{itemize}
+
+\begin{codigo}
+create or replace function fn_tg_venta_consistencia()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.fecha_venta > current_date then
+    raise exception 'La fecha de venta (%) no puede ser posterior a hoy', new.fecha_venta;
+  end if;
+
+  if tg_op = 'INSERT' then
+    new.total_venta := 0;
+  elsif new.total_venta is distinct from old.total_venta and pg_trigger_depth() = 1 then
+    raise exception 'total_venta es un atributo calculado y no se modifica directamente'
+      using hint = 'Modifique los artículos de la venta en detalle_venta.';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger tg_venta_consistencia
+  before insert or update on venta
+  for each row
+  execute function fn_tg_venta_consistencia();
+\end{codigo}
+
+\begin{codigo}
+create or replace function fn_tg_cliente_con_email()
+returns trigger
+language plpgsql
+as $$
+declare
+  v_rfc cliente.rfc%type;
+begin
+  if tg_table_name = 'cliente' then
+    v_rfc := new.rfc;
+  else
+    v_rfc := old.rfc;
+  end if;
+
+  if exists (select 1 from cliente where rfc = v_rfc)
+     and not exists (select 1 from email_cliente where rfc = v_rfc) then
+    raise exception 'El cliente % debe tener al menos un email registrado', v_rfc;
+  end if;
+
+  return null;
+end;
+$$;
+
+create constraint trigger tg_cliente_con_email
+  after insert or update on cliente
+  deferrable initially deferred
+  for each row
+  execute function fn_tg_cliente_con_email();
+
+create constraint trigger tg_email_cliente_minimo
+  after delete or update on email_cliente
+  deferrable initially deferred
+  for each row
+  execute function fn_tg_cliente_con_email();
+\end{codigo}
+
+\subsection{Procedimiento para registrar una venta}
+
+Revisa que la venta tenga al menos un artículo y una cantidad por código, inserta el
+encabezado y después cada artículo. Las demás validaciones ya las hace la base: la
+llave foránea rechaza un cliente o un producto que no existe, la llave primaria un
+código repetido en la misma venta, la restricción check una cantidad menor a uno y
+el trigger del detalle el stock.
+
+\begin{codigo}
+create or replace procedure sp_registrar_venta(
+  p_rfc_cliente     varchar,
+  p_codigos         varchar[],
+  p_cantidades      int[],
+  p_fecha           date default current_date,
+  inout p_num_venta varchar default null
+)
+language plpgsql
+as $$
+declare
+  v_total venta.total_venta%type;
+begin
+  if coalesce(cardinality(p_codigos), 0) = 0
+     or cardinality(p_codigos) <> coalesce(cardinality(p_cantidades), 0) then
+    raise exception 'La venta debe tener al menos un artículo y una cantidad por cada código';
+  end if;
+
+  insert into venta(fecha_venta, rfc_cliente)
+  values (p_fecha, p_rfc_cliente)
+  returning num_venta into p_num_venta;
+
+  for i in 1 .. cardinality(p_codigos) loop
+    insert into detalle_venta(num_venta, codigo_barras, cantidad)
+    values (p_num_venta, p_codigos[i], p_cantidades[i]);
+  end loop;
+
+  select total_venta into v_total from venta where num_venta = p_num_venta;
+  raise notice 'Venta % registrada. Total a pagar: $%', p_num_venta, v_total;
+end;
+$$;
+\end{codigo}
+
+Ejemplo de uso:
+
+\begin{codigo}
+call sp_registrar_venta('XAXX010101000',
+                        array['7509000412705', '7509000413818'],
+                        array[2, 3]);
+\end{codigo}
+
+\subsection{Factura}
+
+La vista \cod{v_factura} reúne, por cada artículo vendido, los datos de la venta, del
+cliente (nombre, RFC, domicilio con estado y correos) y del producto, junto con el
+subtotal, el IVA y el total. Las vistas se calculan cada vez que se consultan, por
+eso cada venta nueva aparece en la vista en automático, sin crear un objeto por
+venta. Para ver la factura de una venta basta filtrar por su número.
+
+\begin{codigo}
+create or replace view v_factura as
+select v.num_venta,
+       v.fecha_venta,
+       c.rfc                                                   as rfc_cliente,
+       concat_ws(' ', c.nombre, c.ap_paterno, c.ap_materno)    as cliente,
+       concat_ws(', ', c.calle || ' ' || c.numero,
+                       'Col. ' || c.colonia,
+                       'C.P. ' || c.cp,
+                       cp.estado)                              as domicilio_cliente,
+       (select string_agg(e.email, ', ' order by e.email)
+          from email_cliente e
+         where e.rfc = c.rfc)                                  as email_cliente,
+       d.codigo_barras,
+       p.nombre                                                as producto,
+       p.marca,
+       p.descripcion,
+       d.cantidad,
+       d.precio_unitario,
+       d.total_articulo                                        as importe,
+       round(v.total_venta / 1.16, 2)                          as subtotal,
+       v.total_venta - round(v.total_venta / 1.16, 2)          as iva,
+       v.total_venta
+  from venta v
+  join cliente c        on c.rfc = v.rfc_cliente
+  join codigo_postal cp on cp.cp = c.cp
+  join detalle_venta d  on d.num_venta = v.num_venta
+  join producto p       on p.codigo_barras = d.codigo_barras;
+\end{codigo}
+
+\begin{codigo}
+select * from v_factura where num_venta = 'VENT-001';
+\end{codigo}
+
+\subsection{Ventas y ganancia por fecha o periodo}
+
+Recibe una fecha, o una fecha de inicio y una de fin. Si solo llega una fecha, el
+periodo es ese día. Regresa el número de ventas, las piezas vendidas, el total
+vendido, el costo y la ganancia.
+
+\begin{codigo}
+create or replace function fn_ventas_periodo(
+  p_fecha_inicio  date,
+  p_fecha_fin     date default null
+)
+returns table(
+  fecha_inicio        date,
+  fecha_fin           date,
+  num_ventas          bigint,
+  articulos_vendidos  bigint,
+  total_vendido       numeric,
+  costo_total         numeric,
+  ganancia            numeric
+)
+language plpgsql
+stable
+as $$
+declare
+  v_fin date := coalesce(p_fecha_fin, p_fecha_inicio);
+begin
+  if p_fecha_inicio is null then
+    raise exception 'Debe indicar al menos una fecha';
+  end if;
+
+  if v_fin < p_fecha_inicio then
+    raise exception 'La fecha final (%) es anterior a la fecha inicial (%)', v_fin, p_fecha_inicio;
+  end if;
+
+  return query
+  select p_fecha_inicio,
+         v_fin,
+         count(distinct v.num_venta),
+         coalesce(sum(d.cantidad), 0)::bigint,
+         coalesce(sum(d.total_articulo), 0),
+         coalesce(sum(d.cantidad * d.costo_unitario), 0),
+         coalesce(sum(d.total_articulo - d.cantidad * d.costo_unitario), 0)
+    from venta v
+    join detalle_venta d on d.num_venta = v.num_venta
+   where v.fecha_venta between p_fecha_inicio and v_fin;
+end;
+$$;
+\end{codigo}
+
+\subsection{Productos con menos de 3 piezas}
+
+La vista lista el nombre de los productos con stock menor a 3, marca como
+\cod{NO DISPONIBLE} los que tienen cero e incluye al proveedor para saber a quién
+pedir.
+
+\begin{codigo}
+create or replace view v_productos_stock_bajo as
+select p.codigo_barras,
+       p.nombre,
+       p.marca,
+       p.tipo,
+       p.stock,
+       case when p.stock = 0 then 'NO DISPONIBLE' else 'STOCK BAJO' end  as estado,
+       pr.razon_social                                                     as proveedor
+  from producto p
+  join proveedor pr on pr.id_proveedor = p.id_proveedor
+ where p.stock < 3
+ order by p.stock, p.nombre;
+\end{codigo}
+
+\subsection{Utilidad de un producto}
+
+\begin{codigo}
+create or replace function fn_utilidad(p_codigo_barras varchar)
+returns numeric
+language plpgsql
+stable
+as $$
+declare
+  v_utilidad numeric(10,2);
+begin
+  select precio_venta - precio_compra
+    into v_utilidad
+    from producto
+   where codigo_barras = p_codigo_barras;
+
+  if not found then
+    raise exception 'El producto con código de barras % no existe', p_codigo_barras;
+  end if;
+
+  return v_utilidad;
+end;
+$$;
+\end{codigo}
+
+\subsection{Vistas para el dashboard}
+
+\cod{v_ventas_por_dia} agrupa las ventas por fecha con el total vendido, el costo y
+la ganancia. \cod{v_top10_productos} suma las piezas vendidas de cada producto y
+regresa las 10 con más piezas.
+
+\begin{codigo}
+create or replace view v_ventas_por_dia as
+select v.fecha_venta                                          as fecha,
+       count(distinct v.num_venta)                            as num_ventas,
+       sum(d.total_articulo)                                  as total_vendido,
+       sum(d.cantidad * d.costo_unitario)                     as costo,
+       sum(d.total_articulo - d.cantidad * d.costo_unitario)  as ganancia
+  from venta v
+  join detalle_venta d on d.num_venta = v.num_venta
+ group by v.fecha_venta;
+\end{codigo}
+
+\begin{codigo}
+create or replace view v_top10_productos as
+select p.codigo_barras,
+       p.nombre,
+       p.marca,
+       sum(d.cantidad)        as unidades_vendidas,
+       sum(d.total_articulo)  as importe_vendido
+  from detalle_venta d
+  join producto p on p.codigo_barras = d.codigo_barras
+ group by p.codigo_barras, p.nombre, p.marca
+ order by unidades_vendidas desc, importe_vendido desc
+ limit 10;
+\end{codigo}
+
+\subsection{Rol de solo lectura}
+
+El dashboard se conecta con un usuario del rol \cod{rol_dashboard}, que solo puede
+consultar. Si la aplicación tuviera un error o alguien obtuviera sus credenciales,
+no podría modificar datos.
+
+\begin{codigo}
+-- 7. Rol de solo lectura para el dashboard (DCL)
+-- El usuario con el que se conecta el dashboard se crea en el despliegue:
+--   create user usr_dashboard password '********' in role rol_dashboard;
+-- =============================================================================
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'rol_dashboard') then
+    create role rol_dashboard nologin;
+  end if;
+  execute format('grant connect on database %I to rol_dashboard', current_database());
+end;
+$$;
+
+grant usage on schema public to rol_dashboard;
+grant select on all tables in schema public to rol_dashboard;
+grant execute on function fn_ventas_periodo(date, date), fn_utilidad(varchar)
+   to rol_dashboard;
+\end{codigo}
+
+\subsection{Carga de información}
+
+El script \cod{03_carga_datos.sql} inserta 14 códigos postales, 6 proveedores con
+9 teléfonos, 23 clientes con 27 correos (incluido el público en general y dos
+personas morales) y 45 productos: 26 de papelería, 10 regalos, 4 impresiones y 5
+recargas. Después registra 819 ventas, del 1 de septiembre al 13 de noviembre de
+2026, con 1\,549 renglones de detalle. Las ventas se registran con
+\cod{sp_registrar_venta}, una transacción por venta, así que pasan por las mismas
+validaciones y triggers que una venta real. Los datos de personas y empresas son
+ficticios.
+
+% =============================================================================
+\section{Aplicación}
+% =============================================================================
+
+El dashboard es una página web en Python: Streamlit arma la interfaz, Plotly dibuja
+las gráficas y psycopg se conecta a PostgreSQL. La lógica está en la base de datos;
+la aplicación solo consulta las vistas de la sección anterior con el usuario de solo
+lectura. Arriba tiene un filtro de periodo para la gráfica de ingresos.
+
+\subsection{Ingresos por día: monto vendido contra ganancia real}
+
+Gráfica de líneas con dos series sobre el mismo eje en pesos: en azul el monto
+vendido cada día y en naranja la ganancia real, es decir, lo vendido menos lo que
+costaron esos productos. La distancia entre las dos líneas es el costo de la
+mercancía. Al pasar el cursor se ven los dos valores del día. Fuente:
+\cod{v_ventas_por_dia}.
+
+\subsection{Top 10 de productos más vendidos}
+
+Barras horizontales ordenadas por piezas vendidas, con la cantidad al final de cada
+barra y el importe vendido al pasar el cursor. Las impresiones y copias encabezan la
+lista porque se venden por hoja. Fuente: \cod{v_top10_productos}.
+
+\subsection{Productos no disponibles o con bajo stock}
+
+Tabla con el nombre, el stock, el estado y el proveedor de cada producto con menos de
+3 piezas. El estado se muestra con texto e ícono para no depender solo del color.
+Fuente: \cod{v_productos_stock_bajo}.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{img/dashboard.png}
+\caption{Dashboard con los datos de prueba.}
+\end{figure}
+
+% =============================================================================
+\section{Matriz de pruebas}
+% =============================================================================
+
+Las pruebas se ejecutaron con \cod{psql} sobre la base cargada con
+\cod{03_carga_datos.sql}. Cada prueba corrió dentro de \cod{begin} y
+\cod{rollback} para no alterar los datos. En las que dependen de un trigger
+diferido se usó \cod{set constraints all immediate}, que ejecuta en ese momento las
+revisiones pendientes del \cod{commit}.
+
+\renewcommand{\arraystretch}{1.3}
+\footnotesize
+\begin{longtable}{@{}>{\centering\arraybackslash}p{0.8cm}
+>{\raggedright\arraybackslash}p{4.3cm}
+>{\raggedright\arraybackslash}p{4.0cm}
+>{\raggedright\arraybackslash}p{\dimexpr\textwidth-9.1cm-0.6cm-8\tabcolsep\relax}
+>{\centering\arraybackslash}p{0.6cm}@{}}
+\toprule
+\textbf{ID} & \textbf{Caso} & \textbf{Resultado esperado} & \textbf{Resultado obtenido} & \textbf{OK} \\
+\midrule
+\endhead
+P01 & Venta al público de 2 cuadernos y 3 bolígrafos con \cod{sp_registrar_venta}. &
+Se crea la venta con número consecutivo, precios vigentes, total por artículo y
+total de la venta; el stock baja. &
+\cod{VENT-820}; totales por artículo 98.00 y 21.00; total 119.00; stock de 44 a 42 y
+de 16 a 13. & \ok \\ \midrule
+P02 & Venta de 2 calculadoras científicas con stock de 2. &
+Se aborta la venta y no cambia nada. &
+Error ``Venta abortada: el stock\ldots{} llegaría a 0 (hay 2, se piden 2)''. El stock
+sigue en 2 y no queda la venta. & \ok \\ \midrule
+P03 & Venta capturada con \cod{insert}: un cuaderno y después una memoria USB con
+stock de 1. & Al fallar el segundo artículo se deshace toda la transacción,
+incluido el primero. & Error del trigger en la memoria USB. El stock del cuaderno,
+que había bajado a 43, regresa a 44 y no queda la venta. & \ok \\ \midrule
+P04 & Venta de 15 tijeras con stock de 17. &
+La venta se registra y al confirmar se emite la alerta. &
+\cod{WARNING: ALERTA DE STOCK: quedan 2 pieza(s) de "Tijeras escolares punta
+roma"}\ldots & \ok \\ \midrule
+P05 & Consulta de \codb{v_factura} para \cod{VENT-001}. &
+Datos de venta, cliente, domicilio, correo, artículos, subtotal, IVA y total. &
+Un renglón: público en general, Av. Universidad 3000, 2 bolígrafos negros a 7.00;
+subtotal 12.07, IVA 1.93, total 14.00. & \ok \\ \midrule
+P06 & \codb{fn_ventas_periodo('2026-10-15')}. & Ventas y ganancia de ese día. &
+14 ventas, 68 piezas, vendido 1\,166.00, costo 711.95, ganancia 454.05. & \ok \\ \midrule
+P07 & \codb{fn_ventas_periodo('2026-10-01','2026-10-31')}. &
+Ventas y ganancia del periodo. &
+354 ventas, 1\,747 piezas, vendido 40\,034.50, costo 25\,051.95, ganancia 14\,982.55. & \ok \\ \midrule
+P08 & Periodo con la fecha final antes que la inicial. & Error claro. &
+``La fecha final (2026-10-01) es anterior a la fecha inicial (2026-10-31)''. & \ok \\ \midrule
+P09 & Consulta de \codb{v_productos_stock_bajo}. &
+Productos con menos de 3 piezas. &
+6 productos: 2 no disponibles (stock 0) y 4 con 1 o 2 piezas. & \ok \\ \midrule
+P10 & \codb{fn_utilidad('7509000412705')} (cuaderno profesional). &
+Precio de venta menos precio de compra. & 17.00 (49.00 menos 32.00). & \ok \\ \midrule
+P11 & \cod{fn_utilidad} con un código que no existe. & Error. &
+``El producto con código de barras 7500000000000 no existe''. & \ok \\ \midrule
+P12 & \codb{fn_nuevo_num_venta} con la secuencia en 56, 998 y 999. &
+Prefijo, guion y al menos 3 cifras, sin recortar números de 4 cifras. &
+\cod{VENT-057}, \cod{VENT-999}, \cod{VENT-1000}. & \ok \\ \midrule
+P13 & \cod{update} directo de \cod{total_venta}. & Se rechaza. &
+``total\_venta es un atributo calculado y no se modifica directamente''. & \ok \\ \midrule
+P14 & Cambiar de 2 a 3 la cantidad de un artículo de \cod{VENT-001}. &
+Se ajustan el total del artículo, el total de la venta y el stock. &
+Total del artículo y de la venta de 14.00 a 21.00; stock de 53 a 52. & \ok \\ \midrule
+P15 & Borrar la venta \cod{VENT-002} (4 artículos). &
+Las piezas regresan al stock. &
+Stock de 44 a 50, de 16 a 21, de 13 a 18 y de 56 a 62. & \ok \\ \midrule
+P16 & Venta sin artículos. & Se rechaza al confirmar. &
+``La venta VENT-824 no tiene artículos; toda venta debe incluir al menos uno''. & \ok \\ \midrule
+P17 & Cliente sin correo. & Se rechaza al confirmar. &
+``El cliente PEPJ900101AB1 debe tener al menos un email registrado''. & \ok \\ \midrule
+P18 & Código de barras \cod{123}, tipo \cod{LIBRO}, precio de venta menor al de
+compra, RFC inválido y código postal de 4 dígitos. & Cada uno viola una
+restricción check. & Rechazados por \cod{chk_producto_codigo},
+\cod{chk_producto_tipo}, \cod{chk_producto_precio_venta}, \cod{chk_cliente_rfc} y
+\cod{chk_codigo_postal_cp}. & \ok \\ \midrule
+P19 & Venta con fecha de mañana. & Se rechaza. &
+``La fecha de venta (2026-11-15) no puede ser posterior a hoy''. & \ok \\ \midrule
+P20 & Plan de ejecución de una semana de ventas. &
+Se usa el índice. & \cod{Index Only Scan using idx_venta_fecha}. & \ok \\ \midrule
+P21 & Usuario del rol \cod{rol_dashboard}: consultar y borrar. &
+Puede consultar vistas y funciones pero no modificar. &
+Consulta de \cod{v_ventas_por_dia} y \cod{fn_ventas_periodo} correctas;
+\cod{delete} rechazado con ``permission denied for table venta''. & \ok \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+% =============================================================================
+\section{Checklist de despliegue}
+% =============================================================================
+
+Instrucciones para instalar el proyecto en un equipo o servidor distinto al de
+desarrollo.
+
+\subsection{Requisitos}
+
+\begin{itemize}[label=$\square$, leftmargin=1.2cm, itemsep=0.2em]
+\item PostgreSQL 15 o posterior con \cod{psql} (se probó con PostgreSQL 16).
+\item Python 3.10 o posterior con \cod{pip}.
+\item Git, para clonar el repositorio.
+\item Usuario de PostgreSQL con permiso para crear bases de datos y roles.
+\end{itemize}
+
+\subsection{Base de datos}
+
+\begin{enumerate}[label=$\square$ \arabic*., leftmargin=1.4cm, itemsep=0.35em]
+\item Clonar el repositorio y entrar a la carpeta \cod{sql} del equipo.
+\item Crear la base y las tablas:\\
+\cod{psql -U postgres -f 01_creacion_bd_tablas.sql}
+\item Cargar la programación:\\
+\cod{psql -U postgres -d papeleria -f 02_programacion_bd.sql}
+\item Cargar los datos de prueba:\\
+\cod{psql -U postgres -d papeleria -f 03_carga_datos.sql}\\
+Es normal que aparezcan algunos avisos \cod{ALERTA DE STOCK}: son las alertas de
+las ventas de prueba.
+\item Verificar la carga: \cod{select count(*) from venta;} debe regresar 819 y
+\cod{select * from v_productos_stock_bajo;} 6 productos.
+\item Crear el usuario del dashboard con una contraseña propia:\\
+\cod{create user usr_dashboard password '...' in role rol_dashboard;}
+\item Si el dashboard corre en otro equipo, permitir conexiones remotas en
+\cod{postgresql.conf} (\cod{listen_addresses}) y en \cod{pg_hba.conf}, y abrir el
+puerto 5432 solo para esa dirección.
+\end{enumerate}
+
+En un servicio de PostgreSQL en la nube la base ya viene creada: se omite la
+sección 1 de \cod{01_creacion_bd_tablas.sql} (crear la base y \texttt{\small\textbackslash connect}) y se
+ejecuta el resto conectado a la base del servicio.
+
+\subsection{Dashboard}
+
+\begin{enumerate}[label=$\square$ \arabic*., leftmargin=1.4cm, itemsep=0.35em]
+\item Entrar a la carpeta \cod{dashboard} e instalar dependencias:\\
+\cod{pip install -r requirements.txt}
+\item Definir la cadena de conexión con el usuario de solo lectura:\\
+\cod{export DATABASE_URL="postgresql://usr_dashboard:CLAVE@HOST:5432/papeleria"}\\
+(en Windows: \cod{set DATABASE_URL=...}).
+\item Ejecutar: \cod{streamlit run app.py} y abrir \cod{http://localhost:8501}.
+\item Revisar que el periodo vaya del 01/09/2026 al 13/11/2026 y que las tres
+secciones tengan datos.
+\end{enumerate}
+
+\subsection{Problemas frecuentes}
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.2em]
+\item \textit{No fue posible conectarse a la base de datos}: revisar
+\cod{DATABASE_URL}, que el servidor acepte conexiones y la contraseña del usuario.
+\item \textit{permission denied}: el usuario no pertenece a \cod{rol_dashboard} o
+se ejecutó el script 02 antes de crear las tablas.
+\item Error \cod{database "papeleria" is being accessed by other users} al
+reinstalar: cerrar el dashboard y otras sesiones antes de ejecutar el script 01.
+\end{itemize}
+
+% =============================================================================
+\section{Conclusiones}
+% =============================================================================
+
+\subsection*{Arzate Rios Adrián Axel}
+\pendiente{conclusión personal: dificultades, retos y aciertos.}
+
+\subsection*{Basilio Illescas Andrés}
+\pendiente{conclusión personal: dificultades, retos y aciertos.}
+
+\subsection*{Cruz Macedo Samuel Santiago}
+\pendiente{conclusión personal: dificultades, retos y aciertos.}
+
+\subsection*{Díaz Díaz Mario}
+\pendiente{conclusión personal: dificultades, retos y aciertos.}
+
+\subsection*{Ferrer Cordero José Manuel}
+\pendiente{conclusión personal: dificultades, retos y aciertos.}
+
+\subsection*{García Olvera José Ignacio}
+\pendiente{conclusión personal: dificultades, retos y aciertos.}
+
+% =============================================================================
+\section*{Referencias}
+\addcontentsline{toc}{section}{Referencias}
+\sloppy
+% =============================================================================
+
+\begin{itemize}[leftmargin=1.2cm, itemsep=0.5em]
+\item Arreola, F. \emph{Proyecto final de la asignatura de bases de datos}.
+Facultad de Ingeniería, UNAM, octubre de 2026.
+\item Arreola, F. \emph{Tema IV: diseño lógico}, \emph{Tema V: normalización},
+\emph{Tema VI: diseño físico de una base de datos} y \emph{Tema VII: lenguaje de
+consulta de datos}. Presentaciones del curso de Bases de Datos, Facultad de
+Ingeniería, UNAM, semestre 2027-1.
+\item The PostgreSQL Global Development Group. \emph{PostgreSQL 16 Documentation}:
+capítulos \emph{PL/pgSQL}, \emph{CREATE TRIGGER}, \emph{CREATE PROCEDURE},
+\emph{Indexes} y \emph{Sequence Manipulation Functions}.
+\url{https://www.postgresql.org/docs/16/}
+\item Streamlit. \emph{Streamlit documentation}. \url{https://docs.streamlit.io/}
+\item Plotly. \emph{Plotly Python graphing library}. \url{https://plotly.com/python/}
+\item \emph{Psycopg 3 documentation}. \url{https://www.psycopg.org/psycopg3/docs/}
+\end{itemize}
+
+\end{document}
