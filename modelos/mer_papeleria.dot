@@ -1,0 +1,134 @@
+graph MER_papeleria {
+  // Modelo entidad relación extendido (notación de Chen) del sistema de papelerías
+  // Llave primaria subrayada; clave candidata con barra en la línea; atributo
+  // multivaluado con doble elipse; derivado con elipse punteada; opcional con
+  // línea punteada.
+  // Se dibuja con: neato -n2 -Tpdf mer_papeleria.dot -o mer_papeleria.pdf
+  graph [splines=line, outputorder=edgesfirst, bgcolor="white", pad=0.3];
+  node [fontname="Helvetica", fontsize=12, margin="0.06,0.02", style="filled", fillcolor="white"];
+  edge [penwidth=1.1];
+
+  // Entidades
+  proveedor [label="PROVEEDOR", shape=box, pos="190,640!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  producto [label="PRODUCTO", shape=box, pos="780,640!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  venta [label="VENTA", shape=box, pos="1400,640!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  cliente [label="CLIENTE", shape=box, pos="1400,230!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  regalo [label="REGALO", shape=box, pos="480,170!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  papeleria [label="PAPELERIA", shape=box, pos="660,170!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  impresion [label="IMPRESION", shape=box, pos="840,170!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  recarga [label="RECARGA", shape=box, pos="1020,170!", fontname="Helvetica-Bold", width=1.35, height=0.5];
+  // Relaciones
+  r_surte [label="surte", shape=diamond, pos="470,640!", width=1.35, height=0.75];
+  r_incluye [label="incluye", shape=diamond, pos="1090,640!", width=1.35, height=0.75];
+  r_realiza [label="realiza", shape=diamond, pos="1400,435!", width=1.35, height=0.75];
+  // Atributos de PROVEEDOR
+  a1 [label=<<U>id_proveedor</U>>, shape=ellipse, pos="60,745!", height=0.36];
+  a2 [label="razon_social", shape=ellipse, pos="190,800!", height=0.36];
+  a3 [label="nombre", shape=ellipse, pos="320,750!", height=0.36];
+  a4 [label="telefono", shape=ellipse, pos="335,540!", peripheries=2, height=0.36];
+  a5 [label="domicilio", shape=ellipse, pos="140,500!", height=0.36];
+  a6 [label="estado", shape=ellipse, pos="10,450!", height=0.36];
+  a7 [label="cp", shape=ellipse, pos="40,385!", height=0.36];
+  a8 [label="colonia", shape=ellipse, pos="140,350!", height=0.36];
+  a9 [label="calle", shape=ellipse, pos="245,380!", height=0.36];
+  a10 [label="numero", shape=ellipse, pos="285,445!", height=0.36];
+  // Atributos de PRODUCTO
+  a11 [label=<<U>codigo_barras</U>>, shape=ellipse, pos="575,575!", height=0.36];
+  a12 [label="nombre", shape=ellipse, pos="555,715!", height=0.36];
+  a13 [label="marca", shape=ellipse, pos="590,800!", height=0.36];
+  a14 [label="descripcion", shape=ellipse, pos="690,862!", height=0.36];
+  a15 [label="precio_compra", shape=ellipse, pos="820,880!", height=0.36];
+  a16 [label="precio_venta", shape=ellipse, pos="935,825!", height=0.36];
+  a17 [label="foto", shape=ellipse, pos="975,740!", height=0.36];
+  a18 [label="stock", shape=ellipse, pos="930,565!", height=0.36];
+  a19 [label="utilidad", shape=ellipse, pos="925,470!", style="dashed", height=0.36];
+  a20 [label="fecha_compra", shape=ellipse, pos="600,480!", height=0.36];
+  // Jerarquía PRODUCTO: disjunta (d) y total (doble línea); discriminante tipo
+  h_d [label="d", shape=circle, pos="780,510!", width=0.38, fixedsize=true];
+  h_t [label="", shape=invtriangle, pos="780,440!", width=0.45, height=0.35, fixedsize=true];
+  // Atributos de la relación incluye
+  a21 [label="cantidad", shape=ellipse, pos="1028,512!", height=0.36];
+  a22 [label="precio_unitario", shape=ellipse, pos="1085,450!", height=0.36];
+  a23 [label="costo_unitario", shape=ellipse, pos="1205,450!", height=0.36];
+  a24 [label="total_articulo", shape=ellipse, pos="1260,535!", style="dashed", height=0.36];
+  // Atributos de VENTA
+  a25 [label=<<U>num_venta</U>>, shape=ellipse, pos="1560,725!", height=0.36];
+  a26 [label="fecha_venta", shape=ellipse, pos="1595,640!", height=0.36];
+  a27 [label="total_venta", shape=ellipse, pos="1560,555!", style="dashed", height=0.36];
+  // Atributos de CLIENTE
+  a28 [label=<<U>rfc</U>>, shape=ellipse, pos="1565,310!", height=0.36];
+  a29 [label="email", shape=ellipse, pos="1225,300!", peripheries=2, height=0.36];
+  a30 [label="nombre_completo", shape=ellipse, pos="1600,200!", height=0.36];
+  a31 [label="nombre", shape=ellipse, pos="1780,265!", height=0.36];
+  a32 [label="ap_paterno", shape=ellipse, pos="1805,200!", height=0.36];
+  a33 [label="ap_materno", shape=ellipse, pos="1780,135!", height=0.36];
+  a34 [label="domicilio", shape=ellipse, pos="1400,85!", height=0.36];
+  a35 [label="estado", shape=ellipse, pos="1215,95!", height=0.36];
+  a36 [label="cp", shape=ellipse, pos="1250,25!", height=0.36];
+  a37 [label="colonia", shape=ellipse, pos="1400,-10!", height=0.36];
+  a38 [label="calle", shape=ellipse, pos="1550,25!", height=0.36];
+  a39 [label="numero", shape=ellipse, pos="1585,95!", height=0.36];
+  // Cardinalidad (1:n, m:n) y participación (mín,máx)
+  l_surte [label="1:n", shape=plaintext, pos="470,690!", fontsize=13, style="solid"];
+  l_incluye [label="m:n", shape=plaintext, pos="1090,700!", fontsize=13, style="solid"];
+  l_realiza [label="1:n", shape=plaintext, pos="1462,435!", fontsize=13, style="solid"];
+  c1 [label="(1,1)", shape=plaintext, pos="290,669!", fontsize=12, style="solid"];
+  c2 [label="(0,n)", shape=plaintext, pos="680,669!", fontsize=12, style="solid"];
+  c3 [label="(1,n)", shape=plaintext, pos="880,669!", fontsize=12, style="solid"];
+  c4 [label="(0,n)", shape=plaintext, pos="1300,669!", fontsize=12, style="solid"];
+  c5 [label="(0,n)", shape=plaintext, pos="1420,604!", fontsize=12, style="solid"];
+  c6 [label="(1,1)", shape=plaintext, pos="1420,299!", fontsize=12, style="solid"];
+
+  // Líneas
+  proveedor -- a1;
+  proveedor -- a2 [dir=back, arrowtail=tee, arrowsize=1.3];
+  proveedor -- a3;
+  proveedor -- a4;
+  proveedor -- a5;
+  a5 -- a6;
+  a5 -- a7;
+  a5 -- a8;
+  a5 -- a9;
+  a5 -- a10;
+  producto -- a11;
+  producto -- a12;
+  producto -- a13;
+  producto -- a14;
+  producto -- a15;
+  producto -- a16;
+  producto -- a17;
+  producto -- a18;
+  producto -- a19;
+  producto -- a20;
+  producto -- h_d [color="black:white:black", label="  tipo", fontsize=11];
+  h_d -- h_t;
+  h_t -- regalo;
+  h_t -- papeleria;
+  h_t -- impresion;
+  h_t -- recarga;
+  r_incluye -- a21;
+  r_incluye -- a22;
+  r_incluye -- a23;
+  r_incluye -- a24;
+  venta -- a25;
+  venta -- a26;
+  venta -- a27;
+  cliente -- a28;
+  cliente -- a29;
+  cliente -- a30;
+  a30 -- a31;
+  a30 -- a32 [style="dashed"];
+  a30 -- a33 [style="dashed"];
+  cliente -- a34;
+  a34 -- a35;
+  a34 -- a36;
+  a34 -- a37;
+  a34 -- a38;
+  a34 -- a39;
+  proveedor -- r_surte;
+  r_surte -- producto;
+  producto -- r_incluye;
+  r_incluye -- venta;
+  venta -- r_realiza;
+  r_realiza -- cliente;
+}
